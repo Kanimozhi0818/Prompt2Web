@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview – SiteForge AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Top toolbar ── */
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      gap: 1rem;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      z-index: 200;
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 0.75rem; }
+    .toolbar-logo { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .toolbar-logo em { background: linear-gradient(90deg,#60a5fa,#a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-style: normal; }
+    .badge-live { background: #22c55e; color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.2rem 0.6rem; border-radius: 20px; }
+    .device-switcher { display: flex; gap: 0.4rem; }
+    .dev-btn { background: #334155; border: 1px solid #475569; color: #94a3b8; padding: 0.4rem 0.7rem; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+    .dev-btn:hover, .dev-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .toolbar-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .btn-toolbar { background: transparent; border: 1px solid #475569; color: #94a3b8; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+    .btn-toolbar:hover { background: #334155; border-color: #64748b; color: #fff; }
+    .btn-editor-toggle { background: linear-gradient(135deg,#2563eb,#7c3aed); border: none; color: #fff; padding: 0.5rem 1.1rem; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.875rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+    .btn-editor-toggle:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── Main layout ── */
+    .main-layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Preview area ── */
+    .preview-area {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow: auto;
+      padding: 1.5rem;
+      background: #0f172a;
+      transition: margin-right 0.35s ease;
+    }
+    .preview-frame-wrapper { width: 100%; height: 100%; min-height: 600px; transition: max-width 0.4s ease; }
+    .preview-frame-wrapper.mobile  { max-width: 390px; }
+    .preview-frame-wrapper.tablet  { max-width: 768px; }
+    .preview-frame-wrapper.desktop { max-width: 100%; }
+    #preview-frame { width: 100%; height: 100%; min-height: 600px; border: none; border-radius: 12px; background: #fff; box-shadow: 0 25px 60px rgba(0,0,0,0.5); transition: width 0.4s ease; }
+
+    /* ── Editing Panel Sidebar ── */
+    #editor-sidebar {
+      width: 0;
+      min-width: 0;
+      overflow: hidden;
+      background: #1e293b;
+      border-left: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      transition: width 0.35s cubic-bezier(.4,0,.2,1), min-width 0.35s;
+      flex-shrink: 0;
+    }
+    #editor-sidebar.open {
+      width: 310px;
+      min-width: 310px;
+    }
+    .ep-inner {
+      width: 310px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .ep-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .ep-header span { display: flex; align-items: center; gap: 0.5rem; }
+    .ep-tabs {
+      display: flex;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      flex-shrink: 0;
+    }
+    .ep-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #64748b;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.6rem 0.2rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .ep-tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+    .ep-panes { flex: 1; overflow-y: auto; }
+    .ep-pane { display: none; flex-direction: column; gap: 0.55rem; padding: 1rem 1.1rem; }
+    .ep-pane.active { display: flex; }
+    .ep-pane label { font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-top: 0.2rem; }
+    .ep-section-label {
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #60a5fa;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #334155;
+    }
+    .ep-section-label:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+    .ep-input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      border-radius: 7px;
+      padding: 0.5rem 0.7rem;
+      font-family: inherit;
+      font-size: 0.83rem;
+      transition: border-color 0.2s;
+    }
+    .ep-input:focus { outline: none; border-color: #2563eb; }
+    select.ep-input { cursor: pointer; }
+    input[type="file"].ep-input { padding: 0.35rem 0.5rem; color: #94a3b8; }
+    .ep-textarea { resize: vertical; min-height: 65px; }
+    .ep-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #e2e8f0;
+      font-size: 0.83rem;
+      cursor: pointer;
+      padding: 0.2rem 0;
+    }
+    .ep-toggle-row input[type="checkbox"] { accent-color: #2563eb; width: 15px; height: 15px; cursor: pointer; }
+    .ep-btn {
+      width: 100%;
+      background: #1e3a5f;
+      border: 1px solid #334155;
+      color: #93c5fd;
+      border-radius: 7px;
+      padding: 0.5rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      margin-top: 0.1rem;
+    }
+    .ep-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .ep-btn-primary { background: linear-gradient(135deg,#2563eb,#7c3aed) !important; color: #fff !important; border-color: transparent !important; text-align: center; }
+    .ep-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .ep-color-picker { width: 100%; height: 42px; border: 1px solid #334155; border-radius: 7px; cursor: pointer; background: none; padding: 2px; }
+    .ep-slider { width: 100%; accent-color: #2563eb; }
+    .ep-footer { padding: 0.9rem 1.1rem; border-top: 1px solid #334155; flex-shrink: 0; }
+    .ep-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #059669;
+      color: #fff;
+      padding: 0.55rem 1.4rem;
+      border-radius: 50px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      white-space: nowrap;
+      z-index: 9999;
+      box-shadow: 0 4px 15px rgba(5,150,105,0.4);
+    }
+    .ep-img-preview { width: 100%; border-radius: 7px; object-fit: cover; max-height: 130px; margin-top: 0.5rem; display: none; }
+
+    /* ── Download modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay[hidden] { display: none; }
+    .modal-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 2rem; width: min(480px,95vw); }
+    .modal-card h3 { color: #fff; font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .modal-card p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .modal-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .modal-actions button { flex: 1; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
+    .modal-dl-html { background: #2563eb; color: #fff; }
+    .modal-dl-css  { background: #7c3aed; color: #fff; }
+    .modal-dl-js   { background: #059669; color: #fff; }
+    .modal-dl-all  { background: linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; }
+    .modal-close   { background: #334155; color: #94a3b8; }
+    .modal-actions button:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== TOOLBAR ===== -->
+  <div class="preview-toolbar">
+    <div class="toolbar-left">
+      <div class="toolbar-logo">⚡ SiteForge <em>AI</em></div>
+      <span class="badge-live">LIVE PREVIEW</span>
+    </div>
+
+    <div class="device-switcher">
+      <button class="dev-btn active" id="btn-desktop" title="Desktop" onclick="setDevice('desktop')">🖥</button>
+      <button class="dev-btn" id="btn-tablet"  title="Tablet"  onclick="setDevice('tablet')">📱</button>
+      <button class="dev-btn" id="btn-mobile"  title="Mobile"  onclick="setDevice('mobile')">📲</button>
+    </div>
+
+    <div class="toolbar-actions">
+      <a href="/" class="btn-toolbar">← Back</a>
+      <button class="btn-toolbar" onclick="openDownloadModal()">⬇ Download</button>
+      <button class="btn-editor-toggle" id="editor-toggle-btn" onclick="toggleEditor()">✏️ Edit Site</button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <div class="main-layout">
+
+    <!-- Preview iframe -->
+    <div class="preview-area" id="preview-area">
+      <div class="preview-frame-wrapper desktop" id="frame-wrapper">
+        <iframe id="preview-frame" title="Generated Website Preview"></iframe>
+      </div>
+    </div>
+
+    <!-- ===== EDITING PANEL SIDEBAR ===== -->
+    <div id="editor-sidebar">
+      <div class="ep-inner">
+        <div class="ep-header">
+          <span>🎨 Website Editor</span>
+        </div>
+
+        <!-- Tabs -->
+        <div class="ep-tabs">
+          <button class="ep-tab active" data-tab="content">Content</button>
+          <button class="ep-tab" data-tab="images">Images</button>
+          <button class="ep-tab" data-tab="sections">Sections</button>
+          <button class="ep-tab" data-tab="style">Style</button>
+        </div>
+
+        <div class="ep-panes">
+          <!-- CONTENT TAB -->
+          <div class="ep-pane active" id="ep-content">
+            <p class="ep-section-label">Hero</p>
+            <label>Heading</label>
+            <input class="ep-input" type="text" id="ec-hero-h" placeholder="Main heading" oninput="liveEditIframe('hero-heading',this.value)">
+            <label>Subheading</label>
+            <textarea class="ep-input ep-textarea" id="ec-hero-sub" placeholder="Hero subheading" oninput="liveEditIframe('hero-sub',this.value)"></textarea>
+            <label>Button Text</label>
+            <input class="ep-input" type="text" id="ec-hero-btn" placeholder="Hero button" oninput="liveEditIframe('hero-btn',this.value)">
+
+            <p class="ep-section-label">About</p>
+            <label>Heading</label>
+            <input class="ep-input" type="text" id="ec-about-h" placeholder="About heading" oninput="liveEditIframe('about-heading',this.value)">
+            <label>Paragraph</label>
+            <textarea class="ep-input ep-textarea" id="ec-about-p" placeholder="About text" oninput="liveEditIframe('about-para',this.value)"></textarea>
+
+            <p class="ep-section-label">Other</p>
+            <label>Services Heading</label>
+            <input class="ep-input" type="text" id="ec-svc-h" placeholder="Services heading" oninput="liveEditIframe('services-heading',this.value)">
+            <label>Contact Heading</label>
+            <input class="ep-input" type="text" id="ec-contact-h" placeholder="Contact heading" oninput="liveEditIframe('contact-heading',this.value)">
+          </div>
+
+          <!-- IMAGES TAB -->
+          <div class="ep-pane" id="ep-images">
+            <p class="ep-section-label">Replace / Add Images</p>
+            <label>Target Section</label>
+            <select class="ep-input" id="img-section-sel">
+              <option value="hero">Hero (Background)</option>
+              <option value="about">About (Side Image)</option>
+              <option value="gallery">Gallery (Add to Grid)</option>
+              <option value="contact">Contact (Banner)</option>
+            </select>
+            <label>Upload Image</label>
+            <input class="ep-input" type="file" id="img-file-input" accept="image/*" onchange="previewImg(this)">
+            <img id="img-preview" class="ep-img-preview" alt="Preview">
+            <button class="ep-btn ep-btn-primary" onclick="applyNewImage()">Apply Image</button>
+          </div>
+
+          <!-- SECTIONS TAB -->
+          <div class="ep-pane" id="ep-sections">
+            <p class="ep-section-label">Show / Hide</p>
+            <label class="ep-toggle-row"><input type="checkbox" checked onchange="toggleIframeSection('home',this.checked)"> Hero</label>
+            <label class="ep-toggle-row"><input type="checkbox" checked onchange="toggleIframeSection('about',this.checked)"> About</label>
+            <label class="ep-toggle-row"><input type="checkbox" checked onchange="toggleIframeSection('services',this.checked)"> Services</label>
+            <label class="ep-toggle-row"><input type="checkbox" checked onchange="toggleIframeSection('gallery',this.checked)"> Gallery</label>
+            <label class="ep-toggle-row"><input type="checkbox" checked onchange="toggleIframeSection('testimonials',this.checked)"> Testimonials</label>
+            <label class="ep-toggle-row"><input type="checkbox" checked onchange="toggleIframeSection('contact',this.checked)"> Contact</label>
+            <label class="ep-toggle-row"><input type="checkbox" checked onchange="toggleIframeSection('footer',this.checked)"> Footer</label>
+
+            <p class="ep-section-label">Add New Sections</p>
+            <button class="ep-btn" onclick="addIframeSection('testimonials')">＋ Testimonials</button>
+            <button class="ep-btn" onclick="addIframeSection('pricing')">＋ Pricing</button>
+            <button class="ep-btn" onclick="addIframeSection('faq')">＋ FAQ</button>
+            <button class="ep-btn" onclick="addIframeSection('blog')">＋ Blog</button>
+
+            <p class="ep-section-label">Clone Sections</p>
+            <button class="ep-btn" onclick="cloneIframeSection('services')">Clone Services</button>
+            <button class="ep-btn" onclick="cloneIframeSection('gallery')">Clone Gallery</button>
+          </div>
+
+          <!-- STYLE TAB -->
+          <div class="ep-pane" id="ep-style">
+            <p class="ep-section-label">Color Theme</p>
+            <label>Primary Color</label>
+            <input type="color" class="ep-color-picker" id="theme-color-picker" value="#2563eb" oninput="applyIframeThemeColor(this.value)">
+
+            <p class="ep-section-label">Typography</p>
+            <label>Font Family</label>
+            <select class="ep-input" id="font-select" onchange="applyIframeFont(this.value)">
+              <option value="Inter">Inter (Default)</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Outfit">Outfit</option>
+              <option value="Poppins">Poppins</option>
+              <option value="Playfair+Display">Playfair Display</option>
+            </select>
+
+            <p class="ep-section-label">Spacing</p>
+            <label>Section Padding: <span id="spacing-val">6rem</span></label>
+            <input type="range" class="ep-slider" min="2" max="12" value="6" step="1" oninput="applyIframeSpacing(this.value)">
+          </div>
+        </div><!-- /.ep-panes -->
+
+        <div class="ep-footer">
+          <button class="ep-btn ep-btn-primary" onclick="saveChanges()">💾 Save Changes</button>
+        </div>
+      </div><!-- /.ep-inner -->
+    </div><!-- /#editor-sidebar -->
+  </div><!-- /.main-layout -->
+
+  <!-- ===== DOWNLOAD MODAL ===== -->
+  <div class="modal-overlay" id="download-modal" hidden>
+    <div class="modal-card">
+      <h3>Download Your Website</h3>
+      <p>Choose which files to download, or get everything as a package.</p>
+      <div class="modal-actions">
+        <button class="modal-dl-html" onclick="downloadFile('html')">HTML</button>
+        <button class="modal-dl-css"  onclick="downloadFile('css')">CSS</button>
+        <button class="modal-dl-js"   onclick="downloadFile('js')">JS</button>
+      </div>
+      <div class="modal-actions" style="margin-top:0.75rem;">
+        <button class="modal-dl-all"  onclick="downloadAll()">⬇ Download All Files</button>
+        <button class="modal-close"   onclick="closeDownloadModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div id="ep-toast" class="ep-toast" hidden>✅ Changes saved!</div>
+
+  <!-- Inject generated website data safely via Jinja2 -->
+  <script>
+    const SITE = {
+      html: {{ website_html | tojson }},
+      css:  {{ website_css  | tojson }},
+      js:   {{ website_js   | tojson }}
+    };
+
+    /* ── Render preview inside iframe ── */
+    function renderPreview() {
+      const frame = document.getElementById('preview-frame');
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open();
+      doc.write(SITE.html);
+      doc.close();
+      // Inject CSS
+      const style = doc.createElement('style');
+      style.textContent = SITE.css;
+      doc.head.appendChild(style);
+      // Inject JS (excluding <script src="..."> tags from template)
+      const script = doc.createElement('script');
+      script.textContent = SITE.js;
+      doc.body.appendChild(script);
+
+      /* CRITICAL FAILSAFE: If AI wrote broken JS for "fade-in" elements, force them visible after 1.5s so screen isn't blank */
+      const failsafe=doc.createElement("script");
+      failsafe.innerHTML=`
+setTimeout(() => {
+  document.querySelectorAll('*').forEach(el => {
+    if (window.getComputedStyle(el).opacity === '0' || el.style.opacity === '0') {
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+      el.style.transition = 'opacity 0.5s ease-in';
+    }
+  });
+}, 1500);
+`;
+      doc.body.appendChild(failsafe);
+    }
+
+    /* ── Helper: get iframe doc ── */
+    function iDoc() {
+      const f = document.getElementById('preview-frame');
+      return f.contentDocument || f.contentWindow.document;
+    }
+
+    /* ── Device switcher ── */
+    function setDevice(device) {
+      const wrapper = document.getElementById('frame-wrapper');
+      wrapper.className = 'preview-frame-wrapper ' + device;
+      ['desktop','tablet','mobile'].forEach(d => {
+        document.getElementById('btn-' + d).classList.toggle('active', d === device);
+      });
+    }
+
+    /* ── Toggle editing panel ── */
+    function toggleEditor() {
+      const sidebar = document.getElementById('editor-sidebar');
+      sidebar.classList.toggle('open');
+      const btn = document.getElementById('editor-toggle-btn');
+      btn.textContent = sidebar.classList.contains('open') ? '✕ Close Editor' : '✏️ Edit Site';
+    }
+
+    /* ── Tab switching ── */
+    document.querySelectorAll('.ep-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.ep-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.ep-pane').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('ep-' + tab.dataset.tab)?.classList.add('active');
+      });
+    });
+
+    /* ── Live text editing ── */
+    function liveEditIframe(id, val) {
+      const el = iDoc().getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    /* ── Section visibility ── */
+    function toggleIframeSection(id, show) {
+      const el = iDoc().getElementById(id);
+      if (el) el.style.display = show ? '' : 'none';
+    }
+
+    /* ── Image preview ── */
+    function previewImg(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.getElementById('img-preview');
+        img.src = e.target.result;
+        img.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ── Apply image to section inside iframe ── */
+    function applyNewImage() {
+      const section = document.getElementById('img-section-sel').value;
+      const file = document.getElementById('img-file-input').files[0];
+      if (!file) { alert('Please select an image first.'); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const url = e.target.result;
+        const d = iDoc();
+        if (section === 'hero') {
+          const heroEl = d.getElementById('home') || d.querySelector('.hero');
+          if (heroEl) { heroEl.style.backgroundImage='url('+url+')'; heroEl.style.backgroundSize='cover'; heroEl.style.backgroundPosition='center'; }
+        } else if (section === 'about') {
+          const wrap = d.getElementById('about-img-wrap') || d.querySelector('.about-img');
+          if (wrap) wrap.innerHTML = '<img src="'+url+'" alt="About" style="width:100%;height:380px;object-fit:cover;border-radius:14px;">';
+        } else if (section === 'gallery') {
+          const grid = d.getElementById('gallery-grid') || d.querySelector('.gallery-grid');
+          if (grid) {
+            const item = d.createElement('div');
+            item.className = 'gallery-item';
+            item.style.cssText = 'background-image:url('+url+');background-size:cover;background-position:center;';
+            item.innerHTML = '<div class="overlay"><span>New Image</span></div>';
+            grid.appendChild(item);
+          }
+        } else if (section === 'contact') {
+          const contactEl = d.getElementById('contact') || d.querySelector('#contact,.contact');
+          if (contactEl) {
+            const banner = d.createElement('div');
+            banner.style.cssText = 'margin-bottom:2rem;border-radius:14px;overflow:hidden;';
+            banner.innerHTML = '<img src="'+url+'" alt="Banner" style="width:100%;height:220px;object-fit:cover;">';
+            const h2 = contactEl.querySelector('h2');
+            if (h2) h2.after(banner); else contactEl.prepend(banner);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ── Add new section to iframe ── */
+    function addIframeSection(type) {
+      const d = iDoc();
+      const footer = d.getElementById('footer') || d.querySelector('footer');
+      if (!footer) return;
+      const uid = 'added-'+type+'-'+Date.now();
+      const sections = {
+        testimonials: `<section id="${uid}" class="section alt" style="padding:5rem 0;"><div class="container"><p class="label center">TESTIMONIALS</p><h2 class="center">More Client Reviews</h2><div class="testi-grid"><div class="testi-card"><p>"Amazing experience working with this team!"</p><div class="testi-author"><div class="avatar">CK</div><div><strong>Chris King</strong><span>Manager, Corp X</span></div></div></div><div class="testi-card"><p>"Outstanding results delivered every time."</p><div class="testi-author"><div class="avatar">SR</div><div><strong>Sam Reed</strong><span>Director, Bloom Co.</span></div></div></div></div></div></section>`,
+        pricing: `<section id="${uid}" class="section" style="padding:5rem 0;"><div class="container"><p class="label center">PRICING</p><h2 class="center">Our Plans</h2><div class="service-grid"><div class="card"><div class="card-icon">💎</div><h3>Starter – $29/mo</h3><p>Perfect for small businesses and individuals getting started.</p></div><div class="card"><div class="card-icon">🚀</div><h3>Pro – $79/mo</h3><p>Advanced features for growing teams and organisations.</p></div><div class="card"><div class="card-icon">🏢</div><h3>Enterprise – $199/mo</h3><p>Full-scale solution with dedicated support for large teams.</p></div></div></div></section>`,
+        faq: `<section id="${uid}" class="section alt" style="padding:5rem 0;"><div class="container"><p class="label center">FAQ</p><h2 class="center">Frequently Asked Questions</h2><div style="max-width:740px;margin:0 auto;display:flex;flex-direction:column;gap:1rem;"><details style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;"><summary style="font-weight:700;cursor:pointer;color:#0f172a;">What services do you offer?</summary><p style="margin-top:.75rem;color:#475569;">We offer a full range of professional services tailored to your business needs.</p></details><details style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;"><summary style="font-weight:700;cursor:pointer;color:#0f172a;">How long does a project take?</summary><p style="margin-top:.75rem;color:#475569;">Timelines vary, but most projects are completed within 4–8 weeks.</p></details><details style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;"><summary style="font-weight:700;cursor:pointer;color:#0f172a;">Do you offer support after launch?</summary><p style="margin-top:.75rem;color:#475569;">Yes! We provide ongoing support and maintenance packages.</p></details></div></div></section>`,
+        blog: `<section id="${uid}" class="section" style="padding:5rem 0;"><div class="container"><p class="label center">BLOG</p><h2 class="center">Latest Articles</h2><div class="service-grid"><div class="card"><div class="card-icon">📰</div><h3>How to Grow Your Business</h3><p>Practical tips and strategies to scale your business effectively this year.</p><a href="#" style="color:var(--primary,#2563eb);font-weight:700;font-size:.9rem;">Read More →</a></div><div class="card"><div class="card-icon">💡</div><h3>The Power of Innovation</h3><p>Why embracing new ideas is the key to long-term success.</p><a href="#" style="color:var(--primary,#2563eb);font-weight:700;font-size:.9rem;">Read More →</a></div><div class="card"><div class="card-icon">🚀</div><h3>Marketing in 2026</h3><p>Digital marketing trends you need to know about this year.</p><a href="#" style="color:var(--primary,#2563eb);font-weight:700;font-size:.9rem;">Read More →</a></div></div></div></section>`
+      };
+      if (sections[type]) footer.insertAdjacentHTML('beforebegin', sections[type]);
+    }
+
+    /* ── Clone section in iframe ── */
+    function cloneIframeSection(id) {
+      const d = iDoc();
+      const el = d.getElementById(id);
+      if (!el) return;
+      const clone = el.cloneNode(true);
+      clone.id = id + '-clone-' + Date.now();
+      el.parentNode.insertBefore(clone, el.nextSibling);
+    }
+
+    /* ── Theme color ── */
+    function applyIframeThemeColor(val) {
+      const d = iDoc();
+      d.documentElement.style.setProperty('--primary', val);
+      const r=parseInt(val.slice(1,3),16), g=parseInt(val.slice(3,5),16), b=parseInt(val.slice(5,7),16);
+      const dark='#'+[r-30,g-30,b-30].map(x=>Math.max(0,x).toString(16).padStart(2,'0')).join('');
+      d.documentElement.style.setProperty('--dark', dark);
+    }
+
+    /* ── Font family ── */
+    function applyIframeFont(val) {
+      const d = iDoc();
+      const fontName = val.replace(/\+/g, ' ');
+      const existing = d.getElementById('ep-font-link');
+      if (existing) existing.remove();
+      const link = d.createElement('link');
+      link.id = 'ep-font-link'; link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family='+val+':wght@400;600;700;800&display=swap';
+      d.head.appendChild(link);
+      d.body.style.fontFamily = "'"+fontName+"', sans-serif";
+    }
+
+    /* ── Section spacing ── */
+    function applyIframeSpacing(val) {
+      document.getElementById('spacing-val').textContent = val + 'rem';
+      iDoc().querySelectorAll('.section').forEach(s => s.style.padding = val + 'rem 0');
+    }
+
+    /* ── Save changes ── */
+    function saveChanges() {
+      try {
+        localStorage.setItem('siteforge-saved-html', iDoc().documentElement.outerHTML);
+        const toast = document.getElementById('ep-toast');
+        toast.hidden = false;
+        setTimeout(() => toast.hidden = true, 2500);
+      } catch(e) {
+        alert('Save failed: ' + e.message);
+      }
+    }
+
+    /* ── Download helpers ── */
+    function downloadFile(type) {
+      const map = {
+        html: [SITE.html, 'index.html', 'text/html'],
+        css:  [SITE.css,  'style.css',  'text/css'],
+        js:   [SITE.js,   'script.js',  'text/javascript']
+      };
+      const [content, filename, mime] = map[type];
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+    function downloadAll() { ['html','css','js'].forEach((t,i) => setTimeout(() => downloadFile(t), i*300)); }
+    function openDownloadModal()  { document.getElementById('download-modal').hidden = false; }
+    function closeDownloadModal() { document.getElementById('download-modal').hidden = true; }
+    document.getElementById('download-modal').addEventListener('click', function(e) { if(e.target===this) closeDownloadModal(); });
+
+    // Boot
+    window.addEventListener('load', renderPreview);
+  </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Showcase</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Reset & Fullscreen Enforcer */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Target Iframe */
+    #showcase-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #000; /* Dark background to pop colors */
+      transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    
+    /* Responsive overrides */
+    #showcase-frame.tablet { width: 800px; height: 1024px; border-radius: 20px; box-shadow: 0 0 50px rgba(124, 58, 237, 0.2); }
+    #showcase-frame.mobile { width: 390px; height: 844px;  border-radius: 30px; box-shadow: 0 0 50px rgba(124, 58, 237, 0.2); }
+    
+    .frame-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 1000px;
+    }
+
+    /* Floating Glass Action Block */
+    .glass-island {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50px;
+      padding: 0.5rem 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 99999;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+      animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes floatUp {
+      0% { transform: translate(-50%, 50px); opacity: 0; }
+      100% { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    /* Island Buttons */
+    .btn-island {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      text-decoration: none;
+    }
+
+    .btn-island:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .btn-island.active {
+      background: #7c3aed;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+    }
+    
+    .btn-island.primary {
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      color: white;
+    }
+    .btn-island.primary:hover {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+      transform: scale(1.05);
+    }
+
+    /* Divider */
+    .divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 0.5rem;
+    }
+
+    /* Minimal Download Modal */
+    .dl-glass-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      display: none;
+      place-items: center;
+      z-index: 100000;
+    }
+    .dl-glass-modal.active { display: grid; }
+    
+    .dl-glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 2.5rem;
+      text-align: center;
+      width: 320px;
+    }
+    
+    .dl-glass-card h2 { color: white; margin-top: 0; font-size: 1.5rem; font-weight: 500; }
+    .dl-btn {
+      display: block;
+      width: 100%;
+      padding: 0.8rem;
+      margin-bottom: 0.5rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: white;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dl-btn:hover { background: rgba(255,255,255,0.1); }
+    .dl-btn.master { background: white; color: black; font-weight: 700; margin-top: 1.5rem; }
+    .dl-btn.master:hover { background: #e2e8f0; }
+
+    /* Top Left Marker */
+    .mode-indicator {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      color: rgba(255,255,255,0.3);
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Canvas -->
+  <div class="frame-container">
+    <iframe id="showcase-frame" title="Pure View Showcase"></iframe>
+  </div>
+
+  <div class="mode-indicator">● DYNAMIC MODE</div>
+
+  <!-- Glassmorphism Floating Action Menu -->
+  <div class="glass-island">
+    <!-- Back Button -->
+    <a href="/" class="btn-island" title="Exit to generator">✖</a>
+    
+    <div class="divider"></div>
+
+    <!-- Responsive Toggles -->
+    <button class="btn-island active" id="sDesk" title="Desktop" onclick="switchView('desktop')">💻</button>
+    <button class="btn-island" id="sTab" title="Tablet" onclick="switchView('tablet')">🕹️</button>
+    <button class="btn-island" id="sMob" title="Mobile" onclick="switchView('mobile')">📱</button>
+
+    <div class="divider"></div>
+
+    <!-- Download Trigger -->
+    <button class="btn-island primary" title="Download Source" onclick="toggleModal(true)">⬇</button>
+  </div>
+
+  <!-- Download Interface -->
+  <div class="dl-glass-modal" id="dl-modal" onclick="if(event.target===this) toggleModal(false)">
+    <div class="dl-glass-card">
+      <h2>Source Code</h2>
+      <button class="dl-btn" onclick="grabFile('html')">.HTML</button>
+      <button class="dl-btn" onclick="grabFile('css')">.CSS</button>
+      <button class="dl-btn" onclick="grabFile('js')">.JS</button>
+      <button class="dl-btn master" onclick="grabAll()">Download All</button>
+    </div>
+  </div>
+
+  <script>
+    const PAYLOAD = {
+      html: {{ website_html | tojson }},
+      css:  {{ website_css  | tojson }},
+      js:   {{ website_js   | tojson }}
+    };
+
+    const frame = document.getElementById('showcase-frame');
+    
+    // Inject logic securely
+    function boot() {
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open();
+      // Remove any annoying scrollbars on body if present dynamically
+      const cleanHtml = PAYLOAD.html.replace('<body>', '<body style="margin:0;overflow-x:hidden;">');
+      doc.write(cleanHtml);
+      doc.close();
+
+      const style = doc.createElement('style');
+      style.textContent = PAYLOAD.css;
+      doc.head.appendChild(style);
+
+      // Force frame background to match whatever CSS injected
+      doc.body.style.backgroundColor = getComputedStyle(doc.body).backgroundColor || '#ffffff';
+
+      const script = doc.createElement('script');
+      script.textContent = PAYLOAD.js;
+      doc.body.appendChild(script);
+    }
+
+    // View Switcher
+    function switchView(mode) {
+      document.getElementById('sDesk').classList.remove('active');
+      document.getElementById('sTab').classList.remove('active');
+      document.getElementById('sMob').classList.remove('active');
+      
+      frame.className = '';
+      if(mode === 'desktop') document.getElementById('sDesk').classList.add('active');
+      if(mode === 'tablet') { document.getElementById('sTab').classList.add('active'); frame.classList.add('tablet'); }
+      if(mode === 'mobile') { document.getElementById('sMob').classList.add('active'); frame.classList.add('mobile'); }
+    }
+
+    // Download modal logic
+    const modal = document.getElementById('dl-modal');
+    function toggleModal(state) { modal.classList.toggle('active', state); }
+
+    function grabFile(type) {
+      const meta = {
+        html: [PAYLOAD.html, 'dynamic.html', 'text/html'],
+        css:  [PAYLOAD.css,  'dynamic.css',  'text/css'],
+        js:   [PAYLOAD.js,   'dynamic.js',   'text/javascript']
+      };
+      const [src, fn, mime] = meta[type];
+      const blob = new Blob([src], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fn;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function grabAll() {
+      setTimeout(()=>grabFile('html'), 0);
+      setTimeout(()=>grabFile('css'), 300);
+      setTimeout(()=>grabFile('js'), 600);
+    }
+
+    window.addEventListener('load', boot);
+  </script>
+</body>
+</html>

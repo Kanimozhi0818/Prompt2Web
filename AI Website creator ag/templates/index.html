@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI-powered website generator. Describe your business and get a complete website instantly.">
+  <title>AI Website Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <span>Prompt2Web <em>AI</em></span>
+      </div>
+      <a href="#form-section" class="nav-cta">Build My Site</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="badge">✨ Powered by GPT-4o</div>
+      <h1>Build a <span class="gradient-text">Complete Website</span><br>with AI in Seconds</h1>
+      <p class="hero-subtitle">
+        Describe your business and our AI will generate a fully responsive,
+        modern website — with HTML, CSS, and JavaScript — instantly.
+      </p>
+      <div class="hero-actions">
+        <a href="#form-section" class="btn btn-primary btn-lg">
+          Generate My Website <span class="arrow">→</span>
+        </a>
+        <div class="hero-note">No credit card required &nbsp;·&nbsp; Free to try</div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="mockup-browser">
+        <div class="mockup-bar">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+          <div class="url-bar">https://yoursite.ai</div>
+        </div>
+        <div class="mockup-content">
+          <div class="mock-nav"></div>
+          <div class="mock-hero-block">
+            <div class="mock-h1"></div>
+            <div class="mock-p"></div>
+            <div class="mock-btn"></div>
+          </div>
+          <div class="mock-cards">
+            <div class="mock-card"></div>
+            <div class="mock-card"></div>
+            <div class="mock-card"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-it-works">
+    <div class="container">
+      <p class="section-label">HOW IT WORKS</p>
+      <h2>Three steps to your dream site</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h3>Describe Your Business</h3>
+          <p>Fill in a short form with your business name, type, and preferred style.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h3>AI Generates Site</h3>
+          <p>Our GPT-4o powered engine writes the full HTML, CSS, and JavaScript for you.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h3>Preview &amp; Use</h3>
+          <p>Instantly preview your live site and download the ready-to-deploy code.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FORM ===== -->
+  <section id="form-section" class="form-section">
+    <div class="container">
+      <p class="section-label">GET STARTED</p>
+      <h2>Tell us about your website</h2>
+      <p class="form-intro">The more detail you provide, the better your generated site will be.</p>
+
+      <div class="form-card">
+        <form id="generate-form" novalidate>
+
+          <!-- Row 1 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="website_name">Website / Brand Name <span class="req">*</span></label>
+              <input type="text" id="website_name" name="website_name" placeholder="e.g. Luxe Studio" required>
+              <span class="field-error" id="err-name"></span>
+            </div>
+            <div class="form-group">
+              <label for="website_type">Business / Website Type <span class="req">*</span></label>
+              <input type="text" id="website_type" name="website_type" placeholder="e.g. Photography Studio, Restaurant, Gym…" required>
+              <span class="field-error" id="err-type"></span>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label for="description">Business Description <span class="req">*</span></label>
+            <textarea id="description" name="description" rows="4"
+              placeholder="Describe what your business does, your target audience, and what makes you unique…" required></textarea>
+            <span class="field-error" id="err-desc"></span>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="color_theme">Primary Color Theme</label>
+              <div class="color-input-row">
+                <input type="color" id="color_picker" value="#2563eb">
+                <input type="text" id="color_theme" name="color_theme" value="#2563eb" placeholder="#2563eb" maxlength="20">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="pages">Pages to Include</label>
+              <input type="text" id="pages" name="pages" value="Home, About, Services, Gallery, Testimonials, Contact"
+                placeholder="Home, About, Services, Contact">
+            </div>
+          </div>
+
+          <!-- Image Upload -->
+          <div class="img-upload-section">
+            <div class="img-upload-header">
+              <div>
+                <label class="img-upload-label">🖼 Images <span style="font-weight:400;color:var(--text-muted)">(Optional)</span></label>
+                <p class="img-upload-hint">Upload images and assign each to a section of your website.</p>
+              </div>
+              <button type="button" class="btn-add-img" id="add-img-btn" onclick="addImageRow()">
+                ＋ Add Image
+              </button>
+            </div>
+            <div id="image-rows-container"></div>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+              <span class="btn-text">⚡ Generate My Website</span>
+              <span class="btn-loader" id="btn-loader" hidden>
+                <span class="spinner"></span> Generating…
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LOADING OVERLAY ===== -->
+  <div id="loading-overlay" class="loading-overlay" hidden>
+    <div class="loading-card">
+      <div class="loading-ring">
+        <div></div><div></div><div></div><div></div>
+      </div>
+      <h3>AI is building your website…</h3>
+      <p id="loading-status">Crafting design and layout</p>
+      <div class="loading-steps">
+        <div class="lstep active" id="lstep1">🎨 Designing layout</div>
+        <div class="lstep" id="lstep2">✍️ Writing content</div>
+        <div class="lstep" id="lstep3">💅 Styling components</div>
+        <div class="lstep" id="lstep4">🚀 Finalizing website</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ERROR TOAST ===== -->
+  <div id="error-toast" class="error-toast" hidden>
+    <span class="toast-icon">⚠️</span>
+    <span id="toast-message">Something went wrong.</span>
+    <button id="toast-close" aria-label="Dismiss">✕</button>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="logo">⚡ SiteForge <em>AI</em></div>
+      <p>&copy; 2026 SiteForge AI. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
